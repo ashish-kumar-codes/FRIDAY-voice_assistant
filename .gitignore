@@ -1,0 +1,14 @@
+.DS_Store
+.vscode/
+*.log
+*.tmp
+*.swp
+__pycache__/
+*.py[cod]
+.env
+.env.*
+backend/.venv/
+frontend/node_modules/
+node_modules/
+dist/
+build/

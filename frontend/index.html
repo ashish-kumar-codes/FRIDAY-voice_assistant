@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FRIDAY</title>
+<style>
+  :root{
+    --gold-0:#fffaf0;
+    --gold-1:#ffd166;
+    --gold-2:#ff9f1c;
+    --gold-3:#c96a00;
+    --cyan:#7fe7e0;
+    --bg:#020201;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:#000; height:100%; overflow:hidden; font-family:'Consolas','Courier New',monospace;}
+
+  /* ====================== ROOT STAGE ====================== */
+  #app{
+    position:relative; width:100vw; height:100vh; background:var(--bg);
+    overflow:hidden;
+  }
+
+  /* ---------- BACKGROUND FIELD ---------- */
+  #bg-glow{
+    position:absolute; inset:0; z-index:0;
+    background:
+      radial-gradient(circle at 50% 38%, rgba(255,170,60,.16) 0%, rgba(0,0,0,0) 48%),
+      radial-gradient(ellipse at 50% 105%, rgba(120,55,0,.28) 0%, rgba(0,0,0,0) 62%),
+      #030201;
+  }
+  #stars{
+    position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.55;
+    background-image:
+      radial-gradient(1px 1px at 8% 18%, rgba(255,255,255,.4) 0, transparent 100%),
+      radial-gradient(1px 1px at 78% 12%, rgba(255,255,255,.3) 0, transparent 100%),
+      radial-gradient(1.5px 1.5px at 55% 75%, rgba(255,255,255,.22) 0, transparent 100%),
+      radial-gradient(1px 1px at 25% 88%, rgba(255,255,255,.32) 0, transparent 100%),
+      radial-gradient(1px 1px at 92% 55%, rgba(255,255,255,.22) 0, transparent 100%),
+      radial-gradient(1px 1px at 40% 30%, rgba(255,255,255,.25) 0, transparent 100%),
+      radial-gradient(1px 1px at 65% 90%, rgba(255,255,255,.2) 0, transparent 100%);
+  }
+
+  /* ---------- HOLOGRAPHIC GRID FLOOR ---------- */
+  #floor-wrap{
+    position:absolute; z-index:1; left:0; right:0; bottom:0; height:42%;
+    perspective:340px; overflow:hidden; pointer-events:none;
+  }
+  #floor{
+    position:absolute; left:-50%; right:-50%; bottom:0; height:220%;
+    background-image:
+      linear-gradient(rgba(255,180,80,.28) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,180,80,.28) 1px, transparent 1px);
+    background-size:44px 44px;
+    transform:rotateX(78deg);
+    transform-origin:bottom;
+    mask-image:linear-gradient(to top, rgba(0,0,0,.9), transparent 88%);
+    -webkit-mask-image:linear-gradient(to top, rgba(0,0,0,.9), transparent 88%);
+    animation:floorScroll 3.2s linear infinite;
+  }
+  @keyframes floorScroll{from{background-position:0 0,0 0;} to{background-position:0 44px,44px 0;}}
+
+  /* ---------- SCANLINES + VIGNETTE ---------- */
+  #scanlines{
+    position:absolute; inset:0; z-index:40; pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode:overlay; opacity:.5;
+  }
+  #scan-sweep{
+    position:absolute; left:0; right:0; height:120px; z-index:41; pointer-events:none;
+    background:linear-gradient(to bottom, transparent, rgba(255,210,130,.06), transparent);
+    animation:sweep 5.5s linear infinite;
+  }
+  @keyframes sweep{0%{top:-120px;} 100%{top:100%;}}
+  #vignette{
+    position:absolute; inset:0; z-index:42; pointer-events:none;
+    box-shadow:inset 0 0 160px 60px rgba(0,0,0,.85);
+  }
+  #noise{
+    position:absolute; inset:0; z-index:43; pointer-events:none; opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- HAMBURGER MENU BUTTON ---------- */
+  #menu-btn{
+    position:absolute; z-index:50; top:20px; right:20px;
+    width:52px; height:52px; border-radius:50%;
+    background:rgba(10,6,0,.55);
+    border:1px solid rgba(255,159,28,.55);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:5px; cursor:pointer;
+    box-shadow:0 0 14px rgba(255,150,40,.2);
+    transition:box-shadow .2s ease, border-color .2s ease;
+  }
+  #menu-btn:hover{border-color:var(--gold-1); box-shadow:0 0 22px rgba(255,150,40,.4);}
+  #menu-btn span{width:20px; height:2px; background:var(--gold-2); border-radius:2px; box-shadow:0 0 6px rgba(255,159,28,.6);}
+
+  /* ---------- SETTINGS PANEL ---------- */
+  #panel-backdrop{
+    position:absolute; inset:0; z-index:60; background:rgba(0,0,0,.55);
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  #panel-backdrop.open{opacity:1; pointer-events:auto;}
+  #settings-panel{
+    position:absolute; z-index:61; top:16px; right:16px; bottom:16px;
+    width:min(360px, 90vw);
+    background:#0a0705;
+    border:1px solid rgba(255,159,28,.35);
+    border-radius:18px;
+    padding:24px 22px;
+    box-shadow:0 0 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,159,28,.06) inset;
+    transform:translateX(calc(100% + 32px));
+    transition:transform .32s cubic-bezier(.2,.9,.25,1);
+    overflow-y:auto;
+    font-family:'Segoe UI', sans-serif;
+  }
+  #settings-panel.open{transform:translateX(0);}
+  #panel-title{
+    color:var(--gold-2); font-family:'Consolas','Courier New',monospace;
+    font-size:20px; letter-spacing:.14em; font-weight:700;
+  }
+  #panel-sub{color:#9c9c9c; font-size:13px; margin-top:6px;}
+  #panel-close{
+    position:absolute; top:20px; right:20px; width:30px; height:30px;
+    border-radius:8px; border:1px solid rgba(255,159,28,.4); background:transparent;
+    color:var(--gold-1); cursor:pointer; font-size:15px; line-height:1;
+  }
+  #panel-close:hover{border-color:var(--gold-0); color:var(--gold-0);}
+  #panel-divider{height:1px; background:rgba(255,159,28,.25); margin:16px 0 6px;}
+  .setting-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 0; border-bottom:1px solid rgba(255,159,28,.12);
+  }
+  .setting-left{display:flex; align-items:center; gap:14px;}
+  .setting-icon{
+    width:42px; height:42px; border-radius:10px;
+    border:1px solid rgba(255,159,28,.45); background:rgba(255,159,28,.06);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .setting-icon svg{width:20px; height:20px; fill:none; stroke:var(--gold-2); stroke-width:1.6;}
+  .setting-name{color:#f2f2f2; font-size:15px; font-weight:600;}
+  .setting-desc{color:#8c8c8c; font-size:12px; margin-top:2px;}
+
+  .toggle{
+    position:relative; width:48px; height:27px; border-radius:20px;
+    background:#2a2a2a; border:1px solid rgba(255,255,255,.08);
+    cursor:pointer; flex-shrink:0; transition:background .2s ease;
+  }
+  .toggle.on{background:var(--gold-2); border-color:var(--gold-2);}
+  .toggle .knob{
+    position:absolute; top:2px; left:2px; width:21px; height:21px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.4); transition:left .2s ease;
+  }
+  .toggle.on .knob{left:23px;}
+
+  #status-box{
+    margin-top:22px; padding:16px; border-radius:12px;
+    border:1px solid rgba(255,159,28,.35); background:rgba(255,159,28,.05);
+  }
+  #status-box .status-label{color:var(--gold-2); font-size:10.5px; letter-spacing:.2em; font-family:'Consolas',monospace;}
+  #status-box .status-value{color:#e8e8e8; font-size:14px; margin-top:6px;}
+
+  /* ---------- API EXPAND PANEL ---------- */
+  #api-expand{
+    max-height:0; overflow:hidden; opacity:0;
+    transition:max-height .3s ease, opacity .25s ease, padding .3s ease;
+    padding:0 2px;
+  }
+  #api-expand.open{max-height:320px; opacity:1; padding:6px 2px 18px;}
+  .api-label{
+    display:block; color:#9c9c9c; font-size:11px; letter-spacing:.08em;
+    text-transform:uppercase; margin:10px 0 6px;
+  }
+  .api-field{
+    width:100%; background:rgba(255,159,28,.06); border:1px solid rgba(255,159,28,.35);
+    color:#f2f2f2; font-family:'Consolas',monospace; font-size:13px;
+    padding:10px 12px; border-radius:10px; outline:none;
+  }
+  .api-field:focus{border-color:var(--gold-1);}
+  .api-btn-row{display:flex; gap:10px; margin-top:14px;}
+  .api-link{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:10px 12px; border-radius:10px; font-size:12.5px; font-weight:600;
+    cursor:pointer; border:1px solid rgba(255,159,28,.4); background:transparent; color:var(--gold-1);
+    text-decoration:none; font-family:'Segoe UI',sans-serif;
+  }
+  .api-link:hover{border-color:var(--gold-0); color:var(--gold-0);}
+  .api-btn{
+    flex:1; padding:10px 12px; border-radius:10px; font-size:12.5px; font-weight:600;
+    cursor:pointer; border:1px solid rgba(255,159,28,.4); background:transparent; color:var(--gold-1);
+    font-family:'Segoe UI',sans-serif;
+  }
+  .api-btn:hover{border-color:var(--gold-0); color:var(--gold-0);}
+  .api-btn-primary{background:var(--gold-2); color:#1a0c00; border-color:var(--gold-2);}
+  .api-btn-primary:hover{background:var(--gold-1); color:#1a0c00;}
+  #api-saved-msg{font-size:12px; color:#7fd67f; margin-top:10px; min-height:14px;}
+
+  /* ---------- OPTIONAL TEXT INPUT BOX (toggle-controlled) ---------- */
+  #text-input-wrap{
+    position:relative; z-index:5; width:92%; max-width:460px; margin:10px auto 0;
+    display:none; gap:8px;
+  }
+  #text-input-wrap.visible{display:flex;}
+  #text-input{
+    flex:1; background:rgba(20,12,0,.55); border:1px solid rgba(255,190,100,.35);
+    color:var(--gold-0); font-family:'Segoe UI',sans-serif; font-size:14px;
+    padding:11px 14px; border-radius:22px; outline:none;
+  }
+  #text-input::placeholder{color:rgba(255,214,102,.4);}
+  #text-send{
+    width:42px; height:42px; border-radius:50%; flex-shrink:0;
+    border:1px solid rgba(255,190,100,.4); background:rgba(255,159,28,.12);
+    color:var(--gold-1); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  #text-send svg{width:18px; height:18px; fill:var(--gold-1);}
+
+  /* Kept in the DOM for mic-analysis code, but intentionally hidden. */
+  #waveform{display:none;}
+  #waveform .bar{width:3px; height:4px; border-radius:3px; background:var(--gold-1); box-shadow:0 0 6px rgba(255,190,100,.8); transition:height .06s linear;}
+
+  /* ---------- MAIN STAGE (full screen orb) ---------- */
+  #stage-wrap{
+    position:absolute; z-index:5; top:0; left:0; right:0; bottom:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+  }
+  #stage{
+    position:absolute;
+    inset:0;
+    width:100vw;
+    height:100vh;
+  }
+  #stage canvas{width:100%!important; height:100%!important; display:block;}
+
+  .bloom{position:absolute; z-index:6; inset:0; pointer-events:none; mix-blend-mode:screen;}
+  #bloom-a{background:radial-gradient(circle at 50% 46%, rgba(255,240,200,.95) 0%, rgba(255,190,90,.55) 16%, rgba(255,140,30,.28) 34%, transparent 62%); filter:blur(4px); opacity:.95; animation:corePulse 2.4s ease-in-out infinite;}
+  #bloom-b{background:radial-gradient(circle at 50% 46%, rgba(255,205,120,.65) 0%, rgba(255,150,40,.2) 30%, transparent 58%); filter:blur(30px); opacity:.85; animation:corePulse 3.4s ease-in-out infinite;}
+  #bloom-c{background:radial-gradient(circle at 50% 46%, rgba(255,255,255,.9) 0%, transparent 10%); filter:blur(2px); opacity:.9; animation:hotPulse 1.8s ease-in-out infinite;}
+  @keyframes corePulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.1);}}
+  @keyframes hotPulse{0%,100%{opacity:.75;} 50%{opacity:1;}}
+
+  /* ---------- ROTATING HOLOGRAPHIC DIAL RINGS ---------- */
+  .dial{position:absolute; z-index:7; border-radius:50%; pointer-events:none;
+    border:1px dashed rgba(255,205,120,.35);
+    top:50%; left:50%; transform:translate(-50%,-50%);
+  }
+  .dial-1{width:52vmin; height:52vmin; animation:spin 22s linear infinite;}
+  .dial-2{width:64vmin; height:64vmin; border-style:solid; border-color:rgba(127,231,224,.22); animation:spin 34s linear infinite reverse;}
+  .dial-3{width:76vmin; height:76vmin; border-color:rgba(255,205,120,.15); animation:spin 48s linear infinite;}
+  @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg);}}
+
+  /* ---------- TRANSCRIPT ---------- */
+  #transcript-wrap{position:relative; z-index:5; width:92%; max-width:640px; margin:6px auto 0; min-height:58px; text-align:center;}
+  #transcript{color:var(--gold-0); font-size:15px; line-height:1.55; opacity:.95; text-shadow:0 0 10px rgba(255,170,60,.35); font-family:'Segoe UI',sans-serif;}
+  #transcript.user{color:#ffe9bd; font-style:italic; opacity:.75;}
+  @keyframes blink{0%,100%{opacity:.3;} 50%{opacity:1;}}
+
+  /* ---------- CONTROLS ---------- */
+  #controls{position:relative; z-index:5; display:flex; align-items:center; justify-content:center; gap:20px; padding:14px 0 10px;}
+  #mic-btn{
+    position:relative; width:76px; height:76px; border-radius:50%;
+    border:1px solid rgba(255,200,120,.5);
+    background:radial-gradient(circle at 35% 30%, rgba(255,220,150,.25), rgba(30,15,0,.65) 70%);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:box-shadow .25s ease, transform .15s ease, border-color .25s ease;
+    box-shadow:0 0 18px rgba(255,150,40,.25), inset 0 0 12px rgba(255,180,80,.15);
+  }
+  #mic-btn:hover{transform:scale(1.05);}
+  #mic-btn.listening{border-color:rgba(255,220,150,.95); animation:pulseRing 1.15s ease-in-out infinite;}
+  @keyframes pulseRing{0%,100%{box-shadow:0 0 22px rgba(255,150,40,.45), inset 0 0 14px rgba(255,190,100,.25);} 50%{box-shadow:0 0 52px rgba(255,150,40,.95), inset 0 0 20px rgba(255,190,100,.5);}}
+  #mic-btn svg{width:27px; height:27px; fill:var(--gold-0); filter:drop-shadow(0 0 6px rgba(255,180,80,.7));}
+
+  select, .hud-btn{
+    background:rgba(20,12,0,.6); border:1px solid rgba(255,190,100,.35);
+    color:var(--gold-1); font-family:inherit; font-size:10px; letter-spacing:.1em;
+    padding:7px 10px; border-radius:6px; outline:none; cursor:pointer; text-transform:uppercase;
+  }
+  .hud-btn:hover{border-color:var(--gold-0); color:var(--gold-0);}
+
+  @media (max-width:520px){
+    #settings-panel{top:8px; right:8px; bottom:8px;}
+    #transcript{font-size:13.5px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="bg-glow"></div>
+  <div id="stars"></div>
+  <div id="floor-wrap"><div id="floor"></div></div>
+  <div id="scanlines"></div>
+  <div id="scan-sweep"></div>
+  <div id="noise"></div>
+  <div id="vignette"></div>
+
+  <!-- Menu button: opens the Friday settings panel -->
+  <button id="menu-btn" title="Menu"><span></span><span></span><span></span></button>
+
+  <div id="panel-backdrop"></div>
+  <div id="settings-panel">
+    <button id="panel-close">&#10005;</button>
+    <div id="panel-title">F.R.I.D.A.Y.</div>
+    <div id="panel-sub">System controls</div>
+    <div id="panel-divider"></div>
+
+    <div class="setting-row" id="api-row" style="cursor:pointer;">
+      <div class="setting-left">
+        <div class="setting-icon"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+        <div><div class="setting-name">Groq API Key</div><div class="setting-desc">Paste your key or create one</div></div>
+      </div>
+      <div class="toggle on" id="toggle-api"><div class="knob"></div></div>
+    </div>
+
+    <div id="api-expand">
+      <label class="api-label">Groq API Key</label>
+      <input id="api-key-input" class="api-field" type="password" placeholder="gsk_..." autocomplete="off" />
+      <div class="api-btn-row">
+        <a id="api-create-link" class="api-link" href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Create key</a>
+        <button id="api-save-btn" class="api-btn api-btn-primary">Save</button>
+      </div>
+      <div id="api-saved-msg"></div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-left">
+        <div class="setting-icon"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z"/><path d="M17 12a5 5 0 01-10 0M12 19v2"/></svg></div>
+        <div><div class="setting-name">Microphone</div><div class="setting-desc">Voice input (speech-to-text)</div></div>
+      </div>
+      <div class="toggle on" id="toggle-mic"><div class="knob"></div></div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-left">
+        <div class="setting-icon"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="2"/><path d="M6 11h.01M9 11h.01M12 11h.01M15 11h.01M18 11h.01M8 15h8"/></svg></div>
+        <div><div class="setting-name">Text Input</div><div class="setting-desc">Show typing box</div></div>
+      </div>
+      <div class="toggle on" id="toggle-text"><div class="knob"></div></div>
+    </div>
+
+    <div class="setting-row" style="border-bottom:none;">
+      <div class="setting-left">
+        <div class="setting-icon"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 5V5L8 10H4z"/><path d="M17 9a4 4 0 010 6"/></svg></div>
+        <div><div class="setting-name">Voice Reply</div><div class="setting-desc">Friday speaks responses</div></div>
+      </div>
+      <div class="toggle on" id="toggle-voice"><div class="knob"></div></div>
+    </div>
+
+    <div id="status-box">
+      <div class="status-label">STATUS</div>
+      <div class="status-value" id="status-value">Neural link: connecting…</div>
+    </div>
+  </div>
+
+  <div id="stage-wrap">
+    <div id="stage">
+      <canvas id="orb-canvas"></canvas>
+      <div class="bloom" id="bloom-a"></div>
+      <div class="bloom" id="bloom-b"></div>
+      <div class="bloom" id="bloom-c"></div>
+      <div class="dial dial-1"></div>
+      <div class="dial dial-2"></div>
+      <div class="dial dial-3"></div>
+    </div>
+
+    <div id="transcript-wrap">
+      <div id="transcript"></div>
+    </div>
+
+    <div id="waveform" aria-hidden="true"></div>
+
+    <div id="text-input-wrap" class="visible">
+      <input id="text-input" type="text" placeholder="Type your question…" />
+      <button id="text-send" title="Send"><svg viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg></button>
+    </div>
+
+    <div id="controls">
+      <button id="mic-btn" title="Talk">
+        <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.92V21h2v-2.08A7 7 0 0019 12h-2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  const DEFAULT_BACKEND = location.protocol.startsWith('http') ? location.origin : "http://localhost:8000";
+  let backendUrl = DEFAULT_BACKEND.replace(/\/$/, '');
+  const GROQ_KEY_STORAGE = 'gc_groq_api_key';
+  const GROQ_KEY_URL = 'https://console.groq.com/keys';
+  let sessionId = null;
+
+  /* ============== SETTINGS ============== */
+  const settings = { api:true, mic:true, text:true, voice:true };
+
+  function wireToggle(id, key, onChange){
+    const el = document.getElementById(id);
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      settings[key] = !settings[key];
+      el.classList.toggle('on', settings[key]);
+      if(onChange) onChange(settings[key]);
+    });
+  }
+  wireToggle('toggle-api', 'api', ()=>{ refreshStatus(); });
+  wireToggle('toggle-mic', 'mic', (on)=>{ micBtnRef.style.opacity = on?1:0.35; micBtnRef.style.pointerEvents = on?'auto':'none'; });
+  wireToggle('toggle-text', 'text', (on)=>{ document.getElementById('text-input-wrap').classList.toggle('visible', on); });
+  wireToggle('toggle-voice', 'voice');
+
+  const menuBtn = document.getElementById('menu-btn');
+  const panel = document.getElementById('settings-panel');
+  const backdrop = document.getElementById('panel-backdrop');
+  function openPanel(){ panel.classList.add('open'); backdrop.classList.add('open'); }
+  function closePanel(){ panel.classList.remove('open'); backdrop.classList.remove('open'); }
+  menuBtn.addEventListener('click', openPanel);
+  document.getElementById('panel-close').addEventListener('click', closePanel);
+  backdrop.addEventListener('click', closePanel);
+
+  /* ---------- API connect expand ---------- */
+  const apiRow = document.getElementById('api-row');
+  const apiExpand = document.getElementById('api-expand');
+  const apiKeyInput = document.getElementById('api-key-input');
+  const apiCreateLink = document.getElementById('api-create-link');
+  const apiSaveBtn = document.getElementById('api-save-btn');
+  const apiSavedMsg = document.getElementById('api-saved-msg');
+
+  apiKeyInput.value = localStorage.getItem(GROQ_KEY_STORAGE) || "";
+  apiCreateLink.href = GROQ_KEY_URL;
+
+  // Older builds stored the API key in the backend URL slot. If that value
+  // still exists, clear it so requests keep pointing at the real backend.
+  const legacyBackendValue = localStorage.getItem('gc_backend_url') || "";
+  if(legacyBackendValue && !/^https?:\/\//i.test(legacyBackendValue)){
+    localStorage.removeItem('gc_backend_url');
+  }
+
+  apiRow.addEventListener('click', ()=>{ apiExpand.classList.toggle('open'); });
+
+  apiSaveBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const key = apiKeyInput.value.trim();
+    if(key){
+      localStorage.setItem(GROQ_KEY_STORAGE, key);
+      apiSavedMsg.textContent = "Saved — Friday will use this Groq key.";
+    } else {
+      localStorage.removeItem(GROQ_KEY_STORAGE);
+      apiSavedMsg.textContent = "Saved — Groq key cleared from this browser.";
+    }
+    refreshStatus();
+  });
+
+  function refreshStatus(){
+    if(!settings.api){
+      statusValue.textContent = "Neural link: API disabled";
+      return;
+    }
+    const savedKey = localStorage.getItem(GROQ_KEY_STORAGE);
+    if(savedKey){
+      statusValue.textContent = "Neural link: Groq key saved in this browser";
+    }
+    fetch(backendUrl+"/api/health").then(async r=>{
+      const health = await r.json();
+      if(r.ok && health.ai_configured){
+        statusValue.textContent = "Neural link: active (backend key loaded)";
+      } else if(!savedKey){
+        statusValue.textContent = "Neural link: backend online — paste a Groq key";
+      }
+    }).catch(()=>{ statusValue.textContent = "Neural link: inactive — add an API key or run backend/main.py"; });
+  }
+
+  /* ============== THREE.JS ORB ============== */
+  const canvas = document.getElementById('orb-canvas');
+  const stage = document.getElementById('stage');
+  let renderer, scene, camera, coreGroup, wireGroup, particles;
+  let energyLevel = 0.15, targetEnergy = 0.15;
+  const clockStart = Date.now();
+
+  function initThree(){
+    renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(50,1,0.1,100);
+    camera.position.set(0,0,4.6);
+
+    // a soft directional-style light setup faked with two point lights
+    // (MeshBasicMaterial ignores lights, so the core mesh below uses
+    // MeshStandardMaterial instead to actually pick up shading and look 3D)
+    const keyLight = new THREE.PointLight(0xffffff, 2.4, 20);
+    keyLight.position.set(2.2, 2.4, 3.2);
+    scene.add(keyLight);
+    const rimLight = new THREE.PointLight(0xffb347, 1.6, 20);
+    rimLight.position.set(-2.6, -1.6, -2);
+    scene.add(rimLight);
+    scene.add(new THREE.AmbientLight(0xfff2d8, 0.55));
+
+    coreGroup = new THREE.Group();
+    scene.add(coreGroup);
+
+    // hot white center — shaded (specular highlight + falloff) so it reads as a real 3D sphere
+    const hotGeo = new THREE.SphereGeometry(0.72,64,64);
+    const hotMat = new THREE.MeshStandardMaterial({
+      color:0xffffff, emissive:0xffe9c2, emissiveIntensity:0.9,
+      roughness:0.25, metalness:0.05
+    });
+    const hotMesh = new THREE.Mesh(hotGeo, hotMat);
+    coreGroup.add(hotMesh);
+    coreGroup.userData.hotMesh = hotMesh;
+
+    // thin extra rim-glow shell around the white core to sell the 3D roundness
+    const rimGeo = new THREE.SphereGeometry(0.78,48,48);
+    const rimMat = new THREE.MeshBasicMaterial({color:0xffcf8a, transparent:true, opacity:0.28, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.BackSide});
+    coreGroup.add(new THREE.Mesh(rimGeo, rimMat));
+
+    wireGroup = new THREE.Group();
+    const ringColors = [0xfff3d6,0xffe4a1,0xffd166,0xffb347];
+    for(let i=0;i<12;i++){
+      const radius = 1.95+Math.random()*0.4;
+      const geo = new THREE.TorusGeometry(radius,0.016,8,140);
+      const mat = new THREE.MeshBasicMaterial({color:ringColors[i%ringColors.length], transparent:true, opacity:0.65, blending:THREE.AdditiveBlending, depthWrite:false});
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+      mesh.userData.spin = (Math.random()-0.5)*0.014;
+      mesh.userData.spin2 = (Math.random()-0.5)*0.009;
+      wireGroup.add(mesh);
+    }
+    coreGroup.add(wireGroup);
+
+    // speckled grainy texture clinging to the core surface (the "sandy" look in the reference)
+    const speckCount = 900;
+    const speckGeo = new THREE.BufferGeometry();
+    const speckPositions = new Float32Array(speckCount*3);
+    for(let i=0;i<speckCount;i++){
+      const r = 1.22 + Math.random()*0.14;
+      const theta = Math.random()*Math.PI*2;
+      const phi = Math.acos((Math.random()*2)-1);
+      speckPositions[i*3] = r*Math.sin(phi)*Math.cos(theta);
+      speckPositions[i*3+1] = r*Math.sin(phi)*Math.sin(theta);
+      speckPositions[i*3+2] = r*Math.cos(phi);
+    }
+    speckGeo.setAttribute('position', new THREE.BufferAttribute(speckPositions,3));
+    const speckMat = new THREE.PointsMaterial({color:0xfff0c8, size:0.028, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false});
+    const speckles = new THREE.Points(speckGeo, speckMat);
+    coreGroup.add(speckles);
+    coreGroup.userData.speckles = speckles;
+
+    const pCount = 900;
+    const pGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(pCount*3);
+    const speeds = new Float32Array(pCount);
+    for(let i=0;i<pCount;i++){
+      const r = 1.4+Math.random()*3.2;
+      const theta = Math.random()*Math.PI*2;
+      const phi = Math.acos((Math.random()*2)-1);
+      positions[i*3]=r*Math.sin(phi)*Math.cos(theta);
+      positions[i*3+1]=r*Math.sin(phi)*Math.sin(theta);
+      positions[i*3+2]=r*Math.cos(phi);
+      speeds[i]=0.2+Math.random()*0.9;
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+    const pMat = new THREE.PointsMaterial({color:0xffe0a8, size:0.045, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false});
+    particles = new THREE.Points(pGeo, pMat);
+    particles.userData.speeds = speeds;
+    scene.add(particles);
+
+    resize();
+    window.addEventListener('resize', resize);
+    animate();
+  }
+  function resize(){
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w,h,false);
+    const aspect = w/h;
+    camera.aspect = aspect;
+    const visualRadius = 2.05;
+    const fillFraction = 0.62;
+    const vFovRad = (camera.fov * Math.PI) / 180;
+    const limiter = Math.min(1, aspect);
+    const dist = (visualRadius / fillFraction) / (Math.tan(vFovRad / 2) * limiter);
+    camera.position.set(0, 0, dist);
+    camera.updateProjectionMatrix();
+  }
+  function animate(){
+    requestAnimationFrame(animate);
+    const t = (Date.now()-clockStart)/1000;
+    energyLevel += (targetEnergy-energyLevel)*0.07;
+
+    // continuous rotation, NOT scale pulsing — plus a gentle hover/bob drift
+    coreGroup.rotation.y = t*0.22;
+    coreGroup.rotation.x = Math.sin(t*0.13)*0.12;
+    coreGroup.position.y = Math.sin(t*0.9)*0.055;
+    coreGroup.userData.hotMesh.rotation.y = t*0.35;
+
+    wireGroup.children.forEach((m,i)=>{
+      m.rotation.z += m.userData.spin*(1+energyLevel*3);
+      m.rotation.x += m.userData.spin2*(1+energyLevel*3);
+      m.material.opacity = 0.38+energyLevel*0.5+Math.sin(t*2+i)*0.05;
+    });
+
+    coreGroup.userData.speckles.rotation.y += 0.0009*(1+energyLevel);
+    coreGroup.userData.speckles.material.opacity = 0.7+energyLevel*0.25;
+
+    const posAttr = particles.geometry.attributes.position;
+    const speeds = particles.userData.speeds;
+    for(let i=0;i<speeds.length;i++){
+      const idx=i*3;
+      const angle=0.0026*speeds[i]*(1+energyLevel*2.2);
+      const x=posAttr.array[idx], z=posAttr.array[idx+2];
+      posAttr.array[idx]=x*Math.cos(angle)-z*Math.sin(angle);
+      posAttr.array[idx+2]=x*Math.sin(angle)+z*Math.cos(angle);
+    }
+    posAttr.needsUpdate = true;
+    particles.material.opacity = 0.55+energyLevel*0.4;
+
+    renderer.render(scene, camera);
+  }
+  if(window.THREE){ initThree(); }
+
+  /* ============== WAVEFORM BARS ============== */
+  const waveEl = document.getElementById('waveform');
+  const BAR_COUNT = 40;
+  const bars = [];
+  for(let i=0;i<BAR_COUNT;i++){
+    const b = document.createElement('div');
+    b.className='bar';
+    waveEl.appendChild(b);
+    bars.push(b);
+  }
+  let audioCtx, analyser, micStream, dataArray, rafId;
+
+  function startWaveform(stream){
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const src = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    src.connect(analyser);
+    drawWaveform();
+  }
+  function drawWaveform(){
+    rafId = requestAnimationFrame(drawWaveform);
+    analyser.getByteFrequencyData(dataArray);
+    let sum = 0;
+    for(let i=0;i<BAR_COUNT;i++){
+      const v = dataArray[Math.floor(i*dataArray.length/BAR_COUNT)];
+      sum += v;
+      bars[i].style.height = Math.max(4, (v/255)*34)+'px';
+    }
+    targetEnergy = Math.min(1, 0.35 + (sum/BAR_COUNT/255)*0.9);
+  }
+  function stopWaveform(){
+    if(rafId) cancelAnimationFrame(rafId);
+    bars.forEach(b=>b.style.height='4px');
+    if(audioCtx) audioCtx.close();
+    if(micStream) micStream.getTracks().forEach(t=>t.stop());
+  }
+
+  /* ============== STATE (no on-screen status text — orb + glow communicate state) ============== */
+  const micBtn = document.getElementById('mic-btn');
+  const micBtnRef = micBtn;
+  const transcriptEl = document.getElementById('transcript');
+  const statusValue = document.getElementById('status-value');
+
+  refreshStatus();
+
+  /* ============== SPEECH RECOGNITION ============== */
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = SpeechRecognition ? new SpeechRecognition() : null;
+  let listening = false;
+  let voiceLoopEnabled = false;
+  let listenIdleTimer = null;
+  let restartTimer = null;
+  const LISTEN_IDLE_TIMEOUT = 8000;
+  const RESTART_DELAY = 400;
+  if(recognition){ recognition.continuous=false; recognition.interimResults=true; recognition.maxAlternatives=1; }
+
+  function clearListenTimers(){
+    if(listenIdleTimer){ clearTimeout(listenIdleTimer); listenIdleTimer = null; }
+    if(restartTimer){ clearTimeout(restartTimer); restartTimer = null; }
+  }
+
+  function armIdleTimeout(){
+    if(!voiceLoopEnabled) return;
+    if(listenIdleTimer){ clearTimeout(listenIdleTimer); }
+    listenIdleTimer = setTimeout(()=>{
+      voiceLoopEnabled = false;
+      if(recognition && listening){
+        try{ recognition.stop(); }catch(e){}
+      }
+      endListening();
+    }, LISTEN_IDLE_TIMEOUT);
+  }
+
+  function startListening(){
+    if(!settings.mic) return;
+    if(!recognition){ return; }
+    if(listening) return;
+    voiceLoopEnabled = true;
+    listening = true;
+    micBtn.classList.add('listening');
+    targetEnergy=0.4;
+    clearListenTimers();
+
+    navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+      micStream = stream;
+      startWaveform(stream);
+    }).catch(()=>{});
+
+    recognition.lang = 'hi-IN';
+    recognition.onresult = (e)=>{
+      let final='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(!e.results[i].isFinal){
+          armIdleTimeout();
+        }
+        if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+      }
+      if(final.trim()){
+        clearListenTimers();
+        recognition.stop();
+        askBackend(final.trim());
+      }
+    };
+    recognition.onerror = ()=>{
+      clearListenTimers();
+      voiceLoopEnabled = false;
+      endListening();
+      targetEnergy=0.15;
+    };
+    recognition.onend = ()=>{ endListening(); };
+    try{ recognition.start(); }catch(e){ listening=false; }
+    armIdleTimeout();
+  }
+  function endListening(){
+    listening=false;
+    micBtn.classList.remove('listening');
+    clearListenTimers();
+    stopWaveform();
+  }
+  micBtn.addEventListener('click', ()=>{
+    if(listening){
+      voiceLoopEnabled = false;
+      clearListenTimers();
+      recognition.stop();
+      return;
+    }
+    startListening();
+  });
+
+  /* ============== TEXT INPUT ============== */
+  const textInput = document.getElementById('text-input');
+  const textSend = document.getElementById('text-send');
+  function sendTyped(){
+    const q = textInput.value.trim();
+    if(!q) return;
+    textInput.value='';
+    askBackend(q);
+  }
+  textSend.addEventListener('click', sendTyped);
+  textInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendTyped(); });
+
+  /* ============== TYPEWRITER ============== */
+  function typeText(el, text, speed){
+    el.className=''; el.textContent='';
+    let i=0;
+    const iv = setInterval(()=>{
+      el.textContent += text[i];
+      i++;
+      if(i>=text.length) clearInterval(iv);
+    }, speed||18);
+  }
+
+  /* ============== BACKEND CALL ============== */
+  async function askBackend(question){
+    if(!settings.api){ return; }
+    targetEnergy=0.7;
+    try{
+      const headers = {'Content-Type':'application/json'};
+      const groqKey = localStorage.getItem(GROQ_KEY_STORAGE);
+      if(groqKey){ headers['X-Groq-Api-Key'] = groqKey; }
+      const res = await fetch(backendUrl+"/api/ask", {
+        method:'POST',
+        headers,
+        body: JSON.stringify({question, session_id: sessionId})
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.detail || "Request failed");
+      sessionId = data.session_id || sessionId;
+      const answer = data.answer || "";
+      targetEnergy=0.95;
+      if(settings.text){ typeText(transcriptEl, answer, 16); }
+      if(settings.voice){ speak(answer); } else { targetEnergy=0.15; }
+      if(!settings.voice && voiceLoopEnabled){
+        restartTimer = setTimeout(()=>{
+          if(settings.mic && voiceLoopEnabled && !listening){
+            startListening();
+          }
+        }, RESTART_DELAY);
+      }
+    }catch(err){
+      targetEnergy=0.3;
+      statusValue.textContent = "Neural link: connection error";
+      setTimeout(()=>{ targetEnergy=0.15; }, 1800);
+    }
+  }
+
+  function speak(text){
+    if(!('speechSynthesis' in window)){ targetEnergy=0.15; return; }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang='en-IN'; u.rate=1.0; u.pitch=0.95;
+    u.onend = ()=>{
+      targetEnergy=0.15;
+      if(voiceLoopEnabled && settings.mic){
+        restartTimer = setTimeout(()=>{
+          if(settings.mic && voiceLoopEnabled && !listening){
+            startListening();
+          }
+        }, RESTART_DELAY);
+      }
+    };
+    u.onerror = ()=>{
+      targetEnergy=0.15;
+      if(voiceLoopEnabled && settings.mic){
+        restartTimer = setTimeout(()=>{
+          if(settings.mic && voiceLoopEnabled && !listening){
+            startListening();
+          }
+        }, RESTART_DELAY);
+      }
+    };
+    window.speechSynthesis.speak(u);
+  }
+})();
+</script>
+</body>
+</html>
