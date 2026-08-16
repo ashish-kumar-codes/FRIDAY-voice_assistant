@@ -24,6 +24,9 @@ golden_core/
 ```
 
 ## Run it
+cd "/Users/rohitsingh/Library/Mobile Documents/com~apple~CloudDocs/Desktop/ashish/FRIDAY--VOICE-ASSISTANT/backend"
+source .venv/bin/activate
+uvicorn main:app --reload --port 8000
 
 **Option A — one command (mac/linux):**
 ```bash
