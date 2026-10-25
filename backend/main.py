@@ -92,7 +92,7 @@ def ask(payload: AskRequest, groq_api_key: str | None = Header(default=None, ali
     if not question:
         return AskResponse(answer="Kuch bola nahi tune, dobara try karo.", session_id=session_id)
 
-    client = build_client(groq_api_key) or build_client(API_KEY)
+    client = build_client(groq_api_key)
 
     if client is None:
         return AskResponse(
